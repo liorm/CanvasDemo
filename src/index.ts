@@ -4,7 +4,7 @@ import {Connection} from "./connection";
 
 const INITIAL_NODES = 150;
 const MIN_FPS = 35;
-const NODE_SPEED = 10;
+const NODE_SPEED = 40;
 
 function randomIntFromRange(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1) + min)
@@ -81,16 +81,21 @@ class Controller implements ICanvasElement {
     draw(ctx: CanvasRenderingContext2D): void {
         this._nodes.forEach(item => item.draw(ctx));
         this._connections.forEach(item => item.draw(ctx));
+
+        ctx.globalAlpha = 1;
+        ctx.fillText('Nodes: ' + this._nodes.length,0,15);
+        ctx.fillText('Connections: ' + this._connections.length,0,30);
+        ctx.fillText('FPS: ' + fps.toFixed(2),0,45);
     }
 
-    update(ms: number): boolean {
+    update(secs: number): boolean {
         // Move the mouse node
         this._mouseNode.x = mouse.x;
         this._mouseNode.y = mouse.y;
 
         for (let i = 0; i < this._nodes.length; ++i) {
             const node = this._nodes[i];
-            node.update(ms);
+            node.update(secs);
 
             if (node.isOffscreen) {
                 node.startDecay();
@@ -103,7 +108,7 @@ class Controller implements ICanvasElement {
 
         for (let i = 0; i < this._connections.length; ++i) {
             const conn = this._connections[i];
-            conn.update(ms);
+            conn.update(secs);
 
             let remove = conn.isPeerDead;
             if (remove) {

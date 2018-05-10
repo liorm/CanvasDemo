@@ -26,7 +26,7 @@ export class Connection implements ICanvasElement {
         ctx.closePath();
     }
 
-    update(ms: number): boolean {
+    update(secs: number): boolean {
         const wasVisible = this.isVisible;
 
         const xDist = Math.abs(this._n2.x - this._n1.x);

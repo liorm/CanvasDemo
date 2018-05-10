@@ -24,7 +24,7 @@ addEventListener('resize', () => {
 });
 
 export interface ICanvasElement {
-    update(ms: number): boolean;
+    update(secs: number): boolean;
     draw(ctx: CanvasRenderingContext2D): void;
 }
 
@@ -49,9 +49,11 @@ function animate(forceRedraw?: boolean) {
     const timeAdvance = t0 - lastTime;
     lastTime = t0;
 
+    console.log(timeAdvance);
+
     let needsRedraw = forceRedraw;
     updaters.forEach((item: ICanvasElement) => {
-        needsRedraw = item.update(timeAdvance) || needsRedraw;
+        needsRedraw = item.update(timeAdvance / 1000) || needsRedraw;
     });
 
     if (needsRedraw) {
