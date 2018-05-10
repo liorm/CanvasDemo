@@ -1,70 +1,126 @@
 import {Node, Vector} from "./node";
-import {ICanvasElement, updaters} from "./canvas";
+import {fps, ICanvasElement, mouse, updaters} from "./canvas";
+import {Connection} from "./connection";
 
-const MAX_NODES = 50;
+const INITIAL_NODES = 150;
+const MIN_FPS = 35;
 
-// Utility Functions
 function randomIntFromRange(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1) + min)
 }
+function randomFromRange(min: number, max: number, fraction: number = 2) {
+    const div = Math.pow(1, fraction);
 
-function distance(x1: number, y1: number, x2: number, y2: number) {
-    const xDist = x2 - x1;
-    const yDist = y2 - y1;
+    let number = 0;
+    while (number === 0)
+        number = Math.random() * div * (max - min + 1) + min * div;
 
-    // noinspection JSSuspiciousNameCombination
-    return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2))
+    number = number / div;
+
+    return number;
 }
 
-
 class Controller implements ICanvasElement {
-
     constructor() {
-        for (let i = 0; i < MAX_NODES; ++i) {
-            this.createNode();
+        for (let i = 0; i < INITIAL_NODES; ++i) {
+            this.createNode(false);
         }
+
+        this._mouseNode = this.createNode(true,true);
+
+        // Periodically try to create nodes.
+        setInterval(() => this.tryCreateNewNode(), 50);
     }
 
-    private createNode() {
-        const node = new Node(
-            randomIntFromRange(0, innerWidth),
-            randomIntFromRange(0, innerHeight),
-            2,
-            'white',
-            new Vector(
-                randomIntFromRange(-3, 3),
-                randomIntFromRange(-3, 3)
-            ));
+    private createNode(fromEdge: boolean, still?: boolean): Node {
+        let x: number;
+        let y: number;
+
+        let node: Node;
+        do {
+            if (fromEdge) {
+                const edge = randomIntFromRange(0, 3);
+                if (edge === 0 || edge === 1) {
+                    x = edge === 0 ? 1 : innerWidth - 1;
+                    y = randomFromRange(1, innerHeight - 1);
+                } else {
+                    x = randomFromRange(1, innerWidth - 1);
+                    y = edge === 2 ? 1 : innerHeight - 1;
+                }
+            } else {
+                x = randomFromRange(1, innerWidth - 1);
+                y = randomFromRange(1, innerHeight - 1);
+            }
+            node = new Node(
+                x,
+                y,
+                2,
+                'white',
+                still ?
+                    new Vector() :
+                    new Vector(
+                        randomFromRange(-0.5, 0.5),
+                        randomFromRange(-0.5, 0.5)
+                    )
+            );
+        } while (node.isOffscreen);
+
+        // Add connections for the new node.
+        this._nodes.forEach(n2 => {
+            this._connections.push(new Connection(node, n2, 2, 'white'));
+        });
+
         this._nodes.push(node);
+
+        return node;
     }
+
+    private _mouseNode: Node;
 
     draw(ctx: CanvasRenderingContext2D): void {
-        this._nodes.forEach(node => node.draw(ctx));
+        this._nodes.forEach(item => item.draw(ctx));
+        this._connections.forEach(item => item.draw(ctx));
     }
 
     update(): boolean {
+        // Move the mouse node
+        this._mouseNode.x = mouse.x;
+        this._mouseNode.y = mouse.y;
+
         for (let i = 0; i < this._nodes.length; ++i) {
             const node = this._nodes[i];
             node.update();
 
-            let remove = false;
-            if (node.x > innerWidth || node.x < 0) {
-                remove = true;
-            }
-            if (node.y > innerHeight || node.y < 0) {
-                remove = true;
-            }
-
-            if (remove) {
+            if (node.isOffscreen) {
                 this._nodes.splice(i, 1);
                 --i;
-                this.createNode();
+            }
+        }
+
+        for (let i = 0; i < this._connections.length; ++i) {
+            const conn = this._connections[i];
+            conn.update();
+
+            let remove = conn.isOffscreen;
+            if (remove) {
+                this._connections.splice(i, 1);
+                --i;
             }
         }
         return true;
     }
 
     private _nodes: Node[] = [];
+    private _connections: Connection[] = [];
+
+    private tryCreateNewNode() {
+        if (fps >= MIN_FPS) {
+            this.createNode(true);
+            this.createNode(true);
+        }
+
+        document.title = fps.toFixed(2) + " " + this._nodes.length.toString();
+    }
 }
 
 updaters.add(new Controller());
