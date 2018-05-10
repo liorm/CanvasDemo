@@ -1,5 +1,6 @@
 import {ICanvasElement} from "./canvas";
 
+const NODE_DECAY_STEP = 1;
 const NODE_OPACITY_STEP = 0.3;
 
 export class Vector {
@@ -29,6 +30,11 @@ export class Node implements ICanvasElement {
         this._opacity += NODE_OPACITY_STEP / ms;
         if (this._opacity >= 1) this._opacity = 1;
 
+        if (this._isDecaying) {
+            this._opacity -= NODE_DECAY_STEP / ms;
+            if (this._opacity < 0) this._opacity = 0;
+        }
+
         // Check if this node is updatable.
         if (this.velocity.x === 0 && this.velocity.y === 0)
             return false;
@@ -56,10 +62,19 @@ export class Node implements ICanvasElement {
         ctx.closePath()
     }
 
+    public startDecay() {
+        this._isDecaying = true;
+    }
+    private _isDecaying: boolean = false;
+
     public get isOffscreen() {
         return this._isOffscreen;
     }
     private _isOffscreen: boolean = false;
+
+    public get isVisible() {
+        return this._opacity > 0;
+    }
 
     public get opacity() {
         return this._opacity;

@@ -93,6 +93,9 @@ class Controller implements ICanvasElement {
             node.update(ms);
 
             if (node.isOffscreen) {
+                node.startDecay();
+            }
+            if (!node.isVisible) {
                 this._nodes.splice(i, 1);
                 --i;
             }
@@ -102,7 +105,7 @@ class Controller implements ICanvasElement {
             const conn = this._connections[i];
             conn.update(ms);
 
-            let remove = conn.isOffscreen;
+            let remove = conn.isPeerDead;
             if (remove) {
                 this._connections.splice(i, 1);
                 --i;
@@ -116,8 +119,8 @@ class Controller implements ICanvasElement {
 
     private tryCreateNewNode() {
         if (fps >= MIN_FPS && !isAnimationPaused) {
-            this.createNode(true);
-            this.createNode(true);
+            this.createNode(false);
+            this.createNode(false);
         }
     }
 }
