@@ -24,7 +24,7 @@ addEventListener('resize', () => {
 });
 
 export interface ICanvasElement {
-    update(): boolean;
+    update(ms: number): boolean;
     draw(ctx: CanvasRenderingContext2D): void;
 }
 
@@ -34,15 +34,24 @@ export const updaters = new Set<ICanvasElement>();
 export let fps = 0;
 const FPS_AVG_SAMPLES = 60;
 
+export let isAnimationPaused = true;
+let animationWatchdog = false;
+
+let lastTime = performance.now();
+
 // Animation Loop
 function animate(forceRedraw?: boolean) {
     requestAnimationFrame(() => animate());
 
+    animationWatchdog = false;
+
     const t0 = performance.now();
+    const timeAdvance = t0 - lastTime;
+    lastTime = t0;
 
     let needsRedraw = forceRedraw;
     updaters.forEach((item: ICanvasElement) => {
-        needsRedraw = item.update() || needsRedraw;
+        needsRedraw = item.update(timeAdvance) || needsRedraw;
     });
 
     if (needsRedraw) {
@@ -52,8 +61,8 @@ function animate(forceRedraw?: boolean) {
         });
     }
 
-    const ellapsed = performance.now() - t0;
-    const newFps = 100 / ellapsed;
+    const elapsed = performance.now() - t0;
+    const newFps = 100 / elapsed;
 
     fps -= fps / FPS_AVG_SAMPLES;
     fps += newFps / FPS_AVG_SAMPLES;
@@ -65,3 +74,14 @@ function animate(forceRedraw?: boolean) {
 }
 
 animate(true);
+
+// Animation watchdog.
+setInterval(() => {
+    if (animationWatchdog) {
+        isAnimationPaused = true;
+    } else {
+        isAnimationPaused = false;
+    }
+
+    animationWatchdog = true;
+}, 200);

@@ -1,5 +1,5 @@
 import {Node, Vector} from "./node";
-import {fps, ICanvasElement, mouse, updaters} from "./canvas";
+import {fps, ICanvasElement, isAnimationPaused, mouse, updaters} from "./canvas";
 import {Connection} from "./connection";
 
 const INITIAL_NODES = 150;
@@ -29,7 +29,7 @@ class Controller implements ICanvasElement {
         this._mouseNode = this.createNode(true,true);
 
         // Periodically try to create nodes.
-        setInterval(() => this.tryCreateNewNode(), 50);
+        setInterval(() => this.tryCreateNewNode(), 100);
     }
 
     private createNode(fromEdge: boolean, still?: boolean): Node {
@@ -59,8 +59,8 @@ class Controller implements ICanvasElement {
                 still ?
                     new Vector() :
                     new Vector(
-                        randomFromRange(-0.5, 0.5),
-                        randomFromRange(-0.5, 0.5)
+                        randomFromRange(-20, 20),
+                        randomFromRange(-20, 20)
                     )
             );
         } while (node.isOffscreen);
@@ -82,14 +82,14 @@ class Controller implements ICanvasElement {
         this._connections.forEach(item => item.draw(ctx));
     }
 
-    update(): boolean {
+    update(ms: number): boolean {
         // Move the mouse node
         this._mouseNode.x = mouse.x;
         this._mouseNode.y = mouse.y;
 
         for (let i = 0; i < this._nodes.length; ++i) {
             const node = this._nodes[i];
-            node.update();
+            node.update(ms);
 
             if (node.isOffscreen) {
                 this._nodes.splice(i, 1);
@@ -99,7 +99,7 @@ class Controller implements ICanvasElement {
 
         for (let i = 0; i < this._connections.length; ++i) {
             const conn = this._connections[i];
-            conn.update();
+            conn.update(ms);
 
             let remove = conn.isOffscreen;
             if (remove) {
@@ -114,12 +114,10 @@ class Controller implements ICanvasElement {
     private _connections: Connection[] = [];
 
     private tryCreateNewNode() {
-        if (fps >= MIN_FPS) {
+        if (fps >= MIN_FPS && !isAnimationPaused) {
             this.createNode(true);
             this.createNode(true);
         }
-
-        document.title = fps.toFixed(2) + " " + this._nodes.length.toString();
     }
 }
 

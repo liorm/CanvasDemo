@@ -1,6 +1,6 @@
 import {ICanvasElement} from "./canvas";
 
-const NODE_OPACITY_STEP = 0.05;
+const NODE_OPACITY_STEP = 0.3;
 
 export class Vector {
 
@@ -24,17 +24,17 @@ export class Node implements ICanvasElement {
         this.invalidateOffScreen();
     }
 
-    public update(): boolean {
+    public update(ms: number): boolean {
         // Update opacity gradually.
-        this._opacity += NODE_OPACITY_STEP;
+        this._opacity += NODE_OPACITY_STEP / ms;
         if (this._opacity >= 1) this._opacity = 1;
 
         // Check if this node is updatable.
         if (this.velocity.x === 0 && this.velocity.y === 0)
             return false;
 
-        this.x += this.velocity.x;
-        this.y += this.velocity.y;
+        this.x += this.velocity.x / ms;
+        this.y += this.velocity.y / ms;
         this.invalidateOffScreen();
     }
 
