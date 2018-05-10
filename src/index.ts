@@ -4,6 +4,7 @@ import {Connection} from "./connection";
 
 const INITIAL_NODES = 150;
 const MIN_FPS = 35;
+const NODE_SPEED = 10;
 
 function randomIntFromRange(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1) + min)
@@ -59,8 +60,8 @@ class Controller implements ICanvasElement {
                 still ?
                     new Vector() :
                     new Vector(
-                        randomFromRange(-20, 20),
-                        randomFromRange(-20, 20)
+                        randomFromRange(-NODE_SPEED, NODE_SPEED),
+                        randomFromRange(-NODE_SPEED, NODE_SPEED)
                     )
             );
         } while (node.isOffscreen);
