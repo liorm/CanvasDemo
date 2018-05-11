@@ -46,9 +46,14 @@ function animate(forceRedraw?: boolean) {
     animationWatchdog = false;
 
     const t0 = performance.now();
-    const timeAdvance = t0 - lastTime;
+    let timeAdvance = t0 - lastTime;
     lastTime = t0;
 
+    if (isAnimationPaused) {
+        isAnimationPaused = false;
+        // Reset timeadvance to prevent large lags in the animation.
+        timeAdvance = 1000 / fps;
+    }
     console.log(timeAdvance);
 
     let needsRedraw = forceRedraw;
@@ -81,8 +86,6 @@ animate(true);
 setInterval(() => {
     if (animationWatchdog) {
         isAnimationPaused = true;
-    } else {
-        isAnimationPaused = false;
     }
 
     animationWatchdog = true;
