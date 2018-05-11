@@ -4,6 +4,7 @@ import {Connection} from "./connection";
 
 const INITIAL_NODES = 150;
 const MIN_FPS = 35;
+const MAX_NODES = 500;
 const NODE_SPEED = 40;
 
 function randomIntFromRange(min: number, max: number) {
@@ -30,7 +31,10 @@ class Controller implements ICanvasElement {
         this._mouseNode = this.createNode(true,true);
 
         // Periodically try to create nodes.
-        setInterval(() => this.tryCreateNewNode(), 100);
+        setInterval(() => {
+            this.tryCreateNewNode();
+            this.tryCreateNewNode();
+        }, 100);
     }
 
     private createNode(fromEdge: boolean, still?: boolean): Node {
@@ -68,7 +72,8 @@ class Controller implements ICanvasElement {
 
         // Add connections for the new node.
         this._nodes.forEach(n2 => {
-            this._connections.push(new Connection(node, n2, 2, 'white'));
+            let conn: Connection = new Connection(node, n2, 2, 'white');
+            this._connections.push(conn);
         });
 
         this._nodes.push(node);
@@ -123,8 +128,11 @@ class Controller implements ICanvasElement {
     private _connections: Connection[] = [];
 
     private tryCreateNewNode() {
-        if (fps >= MIN_FPS && !isAnimationPaused) {
-            this.createNode(false);
+        if (
+            fps >= MIN_FPS &&
+            !isAnimationPaused &&
+            this._nodes.length < MAX_NODES
+        ) {
             this.createNode(false);
         }
     }
