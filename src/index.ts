@@ -22,13 +22,93 @@ function randomFromRange(min: number, max: number, fraction: number = 2) {
     return number;
 }
 
+class NodeGenerators {
+    static StillNode(): Node {
+        return new Node(
+            0,
+            0,
+            2,
+            'white',
+            new Vector()
+        );
+    }
+    static EdgeNode(): Node {
+        let node: Node;
+        let x: number;
+        let y: number;
+
+        do {
+            const edge = randomIntFromRange(0, 3);
+            if (edge === 0 || edge === 1) {
+                x = edge === 0 ? 1 : innerWidth - 1;
+                y = randomFromRange(1, innerHeight - 1);
+            } else {
+                x = randomFromRange(1, innerWidth - 1);
+                y = edge === 2 ? 1 : innerHeight - 1;
+            }
+            node = new Node(
+                x,
+                y,
+                2,
+                'white',
+                new Vector(
+                    randomFromRange(-NODE_SPEED, NODE_SPEED),
+                    randomFromRange(-NODE_SPEED, NODE_SPEED)
+                )
+            );
+        } while (node.isOffscreen);
+
+        return node;
+    }
+    static RandomNode(): Node {
+        let node: Node;
+        let x: number;
+        let y: number;
+
+        do {
+            node = new Node(
+                randomFromRange(1, innerWidth - 1),
+                randomFromRange(1, innerHeight - 1),
+                2,
+                'white',
+                new Vector(
+                    randomFromRange(-NODE_SPEED, NODE_SPEED),
+                    randomFromRange(-NODE_SPEED, NODE_SPEED)
+                )
+            );
+        } while (node.isOffscreen);
+
+        return node;
+    }
+    static FountainNode(): Node {
+        let node: Node;
+        let x: number;
+        let y: number;
+
+        do {
+            node = new Node(
+                innerWidth / 2,
+                innerHeight / 2,
+                2,
+                'white',
+                new Vector(
+                    randomFromRange(-NODE_SPEED, NODE_SPEED),
+                    randomFromRange(-NODE_SPEED, NODE_SPEED)
+                )
+            );
+        } while (node.isOffscreen);
+
+        return node;
+    }
+}
+
 class Controller implements ICanvasElement {
     constructor() {
         for (let i = 0; i < INITIAL_NODES; ++i) {
-            this.createNode(false);
+            this.createNode(NodeGenerators.RandomNode);
         }
 
-        this._mouseNode = this.createNode(true,true);
+        this._mouseNode = this.createNode(NodeGenerators.StillNode);
 
         // Periodically try to create nodes.
         setInterval(() => {
@@ -37,39 +117,8 @@ class Controller implements ICanvasElement {
         }, 100);
     }
 
-    private createNode(fromEdge: boolean, still?: boolean): Node {
-        let x: number;
-        let y: number;
-
-        let node: Node;
-        do {
-            if (fromEdge) {
-                const edge = randomIntFromRange(0, 3);
-                if (edge === 0 || edge === 1) {
-                    x = edge === 0 ? 1 : innerWidth - 1;
-                    y = randomFromRange(1, innerHeight - 1);
-                } else {
-                    x = randomFromRange(1, innerWidth - 1);
-                    y = edge === 2 ? 1 : innerHeight - 1;
-                }
-            } else {
-                x = randomFromRange(1, innerWidth - 1);
-                y = randomFromRange(1, innerHeight - 1);
-            }
-            node = new Node(
-                x,
-                y,
-                2,
-                'white',
-                still ?
-                    new Vector() :
-                    new Vector(
-                        randomFromRange(-NODE_SPEED, NODE_SPEED),
-                        randomFromRange(-NODE_SPEED, NODE_SPEED)
-                    )
-            );
-        } while (node.isOffscreen);
-
+    private createNode(generator: () => Node): Node {
+        const node = generator();
         // Add connections for the new node.
         this._nodes.forEach(n2 => {
             let conn: Connection = new Connection(node, n2, 2, 'white');
@@ -133,7 +182,8 @@ class Controller implements ICanvasElement {
             !isAnimationPaused &&
             this._nodes.length < MAX_NODES
         ) {
-            this.createNode(false);
+            this.createNode(NodeGenerators.RandomNode);
+            this.createNode(NodeGenerators.RandomNode);
         }
     }
 }
