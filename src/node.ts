@@ -14,13 +14,12 @@ export class Vector {
     public y: number;
 }
 
-export class Node implements ICanvasElement {
-    constructor(
+export abstract class Node implements ICanvasElement {
+    protected constructor(
         public x: number,
         public y: number,
         public radius: number,
-        public color: string,
-        public velocity: Vector,
+        public color: string
     ) {
         this.invalidateOffScreen();
     }
@@ -35,13 +34,15 @@ export class Node implements ICanvasElement {
             if (this._opacity < 0) this._opacity = 0;
         }
 
-        // Check if this node is updatable.
-        if (this.velocity.x === 0 && this.velocity.y === 0)
+        if ( !this.updatePosition(secs) )
             return false;
 
-        this.x += this.velocity.x * secs;
-        this.y += this.velocity.y * secs;
         this.invalidateOffScreen();
+
+        // Decay when going offscreen.
+        if (this.isOffscreen) {
+            this.startDecay();
+        }
     }
 
     private invalidateOffScreen() {
@@ -80,4 +81,26 @@ export class Node implements ICanvasElement {
         return this._opacity;
     }
     private _opacity: number = 0;
+
+    protected abstract updatePosition(secs: number): boolean;
+}
+
+export class VectorNode extends Node {
+    constructor(
+        x: number, y: number,
+        radius: number,
+        color: string,
+        public velocity: Vector
+    ) {
+        super(x, y, radius, color);
+    }
+
+    protected updatePosition(secs: number) {
+        if (this.velocity.x === 0 && this.velocity.y === 0)
+            return false;
+
+        this.x += this.velocity.x * secs;
+        this.y += this.velocity.y * secs;
+        return true;
+    }
 }

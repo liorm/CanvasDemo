@@ -1,4 +1,4 @@
-import {Node, Vector} from "./node";
+import {Node, Vector, VectorNode} from "./node";
 import {fps, ICanvasElement, isAnimationPaused, mouse, updaters} from "./canvas";
 import {Connection} from "./connection";
 
@@ -24,7 +24,7 @@ function randomFromRange(min: number, max: number, fraction: number = 2) {
 
 class NodeGenerators {
     static StillNode(): Node {
-        return new Node(
+        return new VectorNode(
             0,
             0,
             2,
@@ -46,7 +46,7 @@ class NodeGenerators {
                 x = randomFromRange(1, innerWidth - 1);
                 y = edge === 2 ? 1 : innerHeight - 1;
             }
-            node = new Node(
+            node = new VectorNode(
                 x,
                 y,
                 2,
@@ -66,7 +66,7 @@ class NodeGenerators {
         let y: number;
 
         do {
-            node = new Node(
+            node = new VectorNode(
                 randomFromRange(1, innerWidth - 1),
                 randomFromRange(1, innerHeight - 1),
                 2,
@@ -86,7 +86,7 @@ class NodeGenerators {
         let y: number;
 
         do {
-            node = new Node(
+            node = new VectorNode(
                 innerWidth / 2,
                 innerHeight / 2,
                 2,
@@ -159,9 +159,7 @@ class Controller implements ICanvasElement {
             const node = this._nodes[i];
             node.update(secs);
 
-            if (node.isOffscreen) {
-                node.startDecay();
-            }
+            // Remove invisible nodes.
             if (!node.isVisible) {
                 this._nodes.splice(i, 1);
                 --i;
