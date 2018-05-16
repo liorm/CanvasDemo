@@ -1,4 +1,5 @@
 import {ICanvasElement} from "./canvas";
+import {Connection} from "./connection";
 
 const NODE_DECAY_STEP = 1;
 const NODE_OPACITY_STEP = 0.5;
@@ -24,14 +25,29 @@ export abstract class Node implements ICanvasElement {
         this.invalidateOffScreen();
     }
 
+    private _ownConnections: Connection[] = [];
+
+    public setOwnConnections(list: Connection[]) {
+        this._ownConnections = list;
+    }
+
+    public reinitialize(
+        x: number,
+        y: number
+    ) {
+        this.x = x;
+        this.y = y;
+        this.invalidateOffScreen();
+    }
+
     public update(secs: number): boolean {
         // Update opacity gradually.
-        this._opacity += NODE_OPACITY_STEP * secs;
-        if (this._opacity >= 1) this._opacity = 1;
-
         if (this._isDecaying) {
             this._opacity -= NODE_DECAY_STEP * secs;
             if (this._opacity < 0) this._opacity = 0;
+        } else {
+            this._opacity += NODE_OPACITY_STEP * secs;
+            if (this._opacity >= 1) this._opacity = 1;
         }
 
         if ( !this.updatePosition(secs) )
@@ -39,10 +55,11 @@ export abstract class Node implements ICanvasElement {
 
         this.invalidateOffScreen();
 
-        // Decay when going offscreen.
-        if (this.isOffscreen) {
-            this.startDecay();
-        }
+        // Decay when going off-screen.
+        this._isDecaying = this.isOffscreen;
+
+        // Update own connections.
+        this._ownConnections.forEach(conn => conn.update(secs));
     }
 
     private invalidateOffScreen() {
@@ -60,12 +77,12 @@ export abstract class Node implements ICanvasElement {
         ctx.globalAlpha = this._opacity;
         ctx.fillStyle = this.color;
         ctx.fill();
-        ctx.closePath()
+        ctx.closePath();
+
+        // Draw own connections.
+        this._ownConnections.forEach(conn => conn.draw(ctx));
     }
 
-    public startDecay() {
-        this._isDecaying = true;
-    }
     private _isDecaying: boolean = false;
 
     public get isOffscreen() {
@@ -85,19 +102,43 @@ export abstract class Node implements ICanvasElement {
     protected abstract updatePosition(secs: number): boolean;
 }
 
+export class StillNode extends Node {
+    constructor(x: number, y: number, radius: number, color: string) {
+        super(x, y, radius, color);
+    }
+
+    protected updatePosition(secs: number): boolean {
+        // Do nothing - it's a still node.
+        return false;
+    }
+
+}
+
 export class VectorNode extends Node {
     constructor(
         x: number, y: number,
         radius: number,
         color: string,
-        public velocity: Vector
+        public velocity: Vector,
+        public acceleration?: Vector
     ) {
         super(x, y, radius, color);
     }
 
+    reinitialize(x: number, y: number): void {
+        super.reinitialize(x, y);
+        this.velocity.x = 0;
+        this.velocity.y = 0;
+    }
+
     protected updatePosition(secs: number) {
-        if (this.velocity.x === 0 && this.velocity.y === 0)
+        if (this.velocity.x === 0 && this.velocity.y === 0 && !this.acceleration)
             return false;
+
+        if (this.acceleration) {
+            this.velocity.x += this.acceleration.x * secs;
+            this.velocity.y += this.acceleration.y * secs;
+        }
 
         this.x += this.velocity.x * secs;
         this.y += this.velocity.y * secs;

@@ -5,32 +5,34 @@ const MAX_DISTANCE = 150;
 
 export class Connection implements ICanvasElement {
     constructor(
-        _n1: Node,
-        _n2: Node,
+        ownerNode: Node,
+        peerNode: Node,
         width: number,
         color: string
     ) {
-        this.reinitialize(_n1, _n2, width, color);
+        this.reinitialize(ownerNode, peerNode, width, color);
     }
 
     reinitialize(
-        n1: Node,
-        n2: Node,
+        owner: Node,
+        peerNode: Node,
         width: number,
         color: string
     ) {
-        this._n1 = n1;
-        this._n2 = n2;
+        this._ownerNode = owner;
+        this._peerNode = peerNode;
         this.width = width;
         this.color = color;
         this._opacity = 0;
     }
 
-    private _n1: Node;
-    private _n2: Node;
+    private _ownerNode: Node;
+    private _peerNode: Node;
     public width: number;
     public color: string;
     private _opacity: number;
+
+    public get peer() { return this._peerNode; }
 
     draw(ctx: CanvasRenderingContext2D): void {
         if (!this.isVisible)
@@ -40,17 +42,20 @@ export class Connection implements ICanvasElement {
         ctx.globalAlpha = this._opacity;
         ctx.strokeStyle = this.color;
         ctx.lineWidth = this.width;
-        ctx.moveTo(this._n1.x, this._n1.y);
-        ctx.lineTo(this._n2.x, this._n2.y);
+        ctx.moveTo(this._ownerNode.x, this._ownerNode.y);
+        ctx.lineTo(this._peerNode.x, this._peerNode.y);
         ctx.stroke();
         ctx.closePath();
     }
 
     update(secs: number): boolean {
+        if (this.isPeerDead)
+            return false;
+
         const wasVisible = this.isVisible;
 
-        const xDist = Math.abs(this._n2.x - this._n1.x);
-        const yDist = Math.abs(this._n2.y - this._n1.y);
+        const xDist = Math.abs(this._peerNode.x - this._ownerNode.x);
+        const yDist = Math.abs(this._peerNode.y - this._ownerNode.y);
         if (yDist >= MAX_DISTANCE || xDist >= MAX_DISTANCE) {
             this._opacity = 0;
         } else {
@@ -60,22 +65,18 @@ export class Connection implements ICanvasElement {
             if (this._opacity <= 0.05) this._opacity = 0;
 
             // Make sure opacity corrolates the nodes opacity - used for smoothing the connection in when node is added.
-            if (this._opacity > this._n1.opacity) this._opacity = this._n1.opacity;
-            if (this._opacity > this._n2.opacity) this._opacity = this._n2.opacity;
+            if (this._opacity > this._ownerNode.opacity) this._opacity = this._ownerNode.opacity;
+            if (this._opacity > this._peerNode.opacity) this._opacity = this._peerNode.opacity;
         }
 
         return this.isVisible || wasVisible != this.isVisible;
     }
 
     public get isVisible(): boolean {
-        return this._opacity > 0;
+        return !this.isPeerDead && this._opacity > 0;
     }
 
     public get isPeerDead(): boolean {
-        return !this._n1.isVisible || !this._n2.isVisible;
-    }
-
-    public get isOffscreen(): boolean {
-        return this._n1.isOffscreen || this._n2.isOffscreen;
+        return !this._peerNode.isVisible;
     }
 }
