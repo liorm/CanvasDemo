@@ -1,19 +1,10 @@
 import {ICanvasElement} from "./canvas";
 import {Connection} from "./connection";
+import { Point } from 'paper';
 
 const NODE_DECAY_STEP = 1;
 const NODE_OPACITY_STEP = 0.5;
 
-export class Vector {
-
-    constructor(x?: number, y?: number) {
-        this.x = x || 0;
-        this.y = y || 0;
-    }
-
-    public x: number;
-    public y: number;
-}
 
 export abstract class Node implements ICanvasElement {
     protected constructor(
@@ -134,8 +125,8 @@ export class VectorNode extends Node {
         x: number, y: number,
         radius: number,
         color: string,
-        public velocity: Vector,
-        public acceleration?: Vector
+        public velocity: Point,
+        public acceleration?: Point
     ) {
         super(x, y, radius, color);
     }

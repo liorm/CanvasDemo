@@ -1,6 +1,7 @@
-import {Node, StillNode, Vector, VectorNode} from "./node";
+import {Node, StillNode, VectorNode} from "./node";
 import {fps, ICanvasElement, isAnimationPaused, mouse, updaters} from "./canvas";
 import {Connection} from "./connection";
+import { Point } from 'paper';
 
 const INITIAL_NODES = 300;
 const MIN_FPS = 15;
@@ -50,7 +51,7 @@ class NodeGenerators {
                 y,
                 2,
                 'white',
-                new Vector(
+                new Point(
                     randomFromRange(-NODE_SPEED, NODE_SPEED),
                     randomFromRange(-NODE_SPEED, NODE_SPEED)
                 )
@@ -70,7 +71,7 @@ class NodeGenerators {
                 randomFromRange(1, innerHeight - 1),
                 2,
                 'white',
-                new Vector(
+                new Point(
                     randomFromRange(-NODE_SPEED, NODE_SPEED),
                     randomFromRange(-NODE_SPEED, NODE_SPEED)
                 )
@@ -90,8 +91,8 @@ class NodeGenerators {
                 innerHeight / 2,
                 2,
                 'white',
-                new Vector(),
-                new Vector(
+                new Point(0, 0),
+                new Point(
                     randomFromRange(-NODE_SPEED, NODE_SPEED),
                     randomFromRange(-NODE_SPEED, NODE_SPEED)
                 )
