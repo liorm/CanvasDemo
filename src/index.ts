@@ -1,4 +1,4 @@
-import {Node, Vector, VectorNode} from "./node";
+import {Node, StillNode, Vector, VectorNode} from "./node";
 import {fps, ICanvasElement, isAnimationPaused, mouse, updaters} from "./canvas";
 import {Connection} from "./connection";
 
@@ -24,12 +24,11 @@ function randomFromRange(min: number, max: number, fraction: number = 2) {
 
 class NodeGenerators {
     static StillNode(): Node {
-        return new VectorNode(
+        return new StillNode(
             0,
             0,
             2,
-            'white',
-            new Vector()
+            'white'
         );
     }
     static EdgeNode(): Node {
@@ -91,6 +90,7 @@ class NodeGenerators {
                 innerHeight / 2,
                 2,
                 'white',
+                new Vector(),
                 new Vector(
                     randomFromRange(-NODE_SPEED, NODE_SPEED),
                     randomFromRange(-NODE_SPEED, NODE_SPEED)
@@ -105,16 +105,15 @@ class NodeGenerators {
 class Controller implements ICanvasElement {
     constructor() {
         for (let i = 0; i < INITIAL_NODES; ++i) {
-            this.createNode(NodeGenerators.RandomNode);
+            this.tryCreateNewNode();
         }
 
-        this._mouseNode = this.createNode(NodeGenerators.StillNode);
+        this._mouseNode = <StillNode>this.createNode(NodeGenerators.StillNode);
 
         // Periodically try to create nodes.
         setInterval(() => {
             this.tryCreateNewNode();
-            this.tryCreateNewNode();
-        }, 100);
+        }, 50);
     }
 
     private createNode(generator: () => Node): Node {
@@ -129,7 +128,7 @@ class Controller implements ICanvasElement {
         return node;
     }
 
-    private _mouseNode: Node;
+    private _mouseNode: StillNode;
 
     draw(ctx: CanvasRenderingContext2D): void {
         this._nodes.forEach(item => item.draw(ctx));
@@ -141,15 +140,14 @@ class Controller implements ICanvasElement {
 
     update(secs: number): boolean {
         // Move the mouse node
-        this._mouseNode.x = mouse.x;
-        this._mouseNode.y = mouse.y;
+        this._mouseNode.move(mouse.x, mouse.y);
 
         for (let i = 0; i < this._nodes.length; ++i) {
             const node = this._nodes[i];
             node.update(secs);
 
             // Remove invisible nodes.
-            if (!node.isVisible) {
+            if (!node.isVisible && this._mouseNode != node) {
                 node.setOwnConnections([]);
                 this._nodes.splice(i, 1);
                 --i;

@@ -17,13 +17,16 @@ export class Vector {
 
 export abstract class Node implements ICanvasElement {
     protected constructor(
-        public x: number,
-        public y: number,
-        public radius: number,
-        public color: string
+        protected _x: number,
+        protected _y: number,
+        protected radius: number,
+        protected color: string
     ) {
         this.invalidateOffScreen();
     }
+
+    public get x() { return this._x; }
+    public get y() { return this._y; }
 
     private _ownConnections: Connection[] = [];
 
@@ -35,8 +38,8 @@ export abstract class Node implements ICanvasElement {
         x: number,
         y: number
     ) {
-        this.x = x;
-        this.y = y;
+        this._x = x;
+        this._y = y;
         this.invalidateOffScreen();
     }
 
@@ -63,9 +66,9 @@ export abstract class Node implements ICanvasElement {
     }
 
     private invalidateOffScreen() {
-        if (this.x > innerWidth || this.x < 0) {
+        if (this._x > innerWidth || this._x < 0) {
             this._isOffscreen = true;
-        } else if (this.y > innerHeight || this.y < 0) {
+        } else if (this._y > innerHeight || this._y < 0) {
             this._isOffscreen = true;
         } else
             this._isOffscreen = false;
@@ -73,7 +76,7 @@ export abstract class Node implements ICanvasElement {
 
     public draw(ctx: CanvasRenderingContext2D) {
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        ctx.arc(this._x, this._y, this.radius, 0, Math.PI * 2, false);
         ctx.globalAlpha = this._opacity;
         ctx.fillStyle = this.color;
         ctx.fill();
@@ -108,10 +111,22 @@ export class StillNode extends Node {
     }
 
     protected updatePosition(secs: number): boolean {
+        if (this._moved) {
+            this._moved = false;
+            return true;
+        }
+
         // Do nothing - it's a still node.
         return false;
     }
 
+    private _moved: boolean = false;
+
+    public move(x: number, y: number) {
+        this._x = x;
+        this._y = y;
+        this._moved = true;
+    }
 }
 
 export class VectorNode extends Node {
@@ -140,8 +155,8 @@ export class VectorNode extends Node {
             this.velocity.y += this.acceleration.y * secs;
         }
 
-        this.x += this.velocity.x * secs;
-        this.y += this.velocity.y * secs;
+        this._x += this.velocity.x * secs;
+        this._y += this.velocity.y * secs;
         return true;
     }
 }
