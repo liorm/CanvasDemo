@@ -5,12 +5,32 @@ const MAX_DISTANCE = 150;
 
 export class Connection implements ICanvasElement {
     constructor(
-        private _n1: Node,
-        private _n2: Node,
-        public width: number,
-        public color: string
+        _n1: Node,
+        _n2: Node,
+        width: number,
+        color: string
     ) {
+        this.reinitialize(_n1, _n2, width, color);
     }
+
+    reinitialize(
+        n1: Node,
+        n2: Node,
+        width: number,
+        color: string
+    ) {
+        this._n1 = n1;
+        this._n2 = n2;
+        this.width = width;
+        this.color = color;
+        this._opacity = 0;
+    }
+
+    private _n1: Node;
+    private _n2: Node;
+    public width: number;
+    public color: string;
+    private _opacity: number;
 
     draw(ctx: CanvasRenderingContext2D): void {
         if (!this.isVisible)
@@ -46,8 +66,6 @@ export class Connection implements ICanvasElement {
 
         return this.isVisible || wasVisible != this.isVisible;
     }
-
-    private _opacity = 0;
 
     public get isVisible(): boolean {
         return this._opacity > 0;

@@ -2,10 +2,10 @@ import {Node, Vector} from "./node";
 import {fps, ICanvasElement, isAnimationPaused, mouse, updaters} from "./canvas";
 import {Connection} from "./connection";
 
-const INITIAL_NODES = 150;
-const MIN_FPS = 35;
-const MAX_NODES = 500;
-const NODE_SPEED = 40;
+const INITIAL_NODES = 300;
+const MIN_FPS = 0;
+const MAX_NODES = 400;
+const NODE_SPEED = 30;
 
 function randomIntFromRange(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1) + min)
@@ -121,7 +121,15 @@ class Controller implements ICanvasElement {
         const node = generator();
         // Add connections for the new node.
         this._nodes.forEach(n2 => {
-            let conn: Connection = new Connection(node, n2, 2, 'white');
+            let conn: Connection;
+            if (this._deadConnectionsCount > 0) {
+                this._deadConnectionsCount--;
+                conn = this._deadConnections[this._deadConnectionsCount];
+                this._deadConnections[this._deadConnectionsCount] = null;
+                conn.reinitialize(node, n2, 2, 'white');
+            } else {
+                conn = new Connection(node, n2, 2, 'white');
+            }
             this._connections.push(conn);
         });
 
@@ -166,8 +174,12 @@ class Controller implements ICanvasElement {
 
             let remove = conn.isPeerDead;
             if (remove) {
-                this._connections.splice(i, 1);
+                const deadConn = this._connections.splice(i, 1);
                 --i;
+                if (this._deadConnectionsCount < this._deadConnections.length) {
+                    this._deadConnections[this._deadConnectionsCount] = deadConn[0];
+                    this._deadConnectionsCount++;
+                }
             }
         }
         return true;
@@ -176,13 +188,15 @@ class Controller implements ICanvasElement {
     private _nodes: Node[] = [];
     private _connections: Connection[] = [];
 
+    private _deadConnections: Connection[] = new Array(50000);
+    private _deadConnectionsCount = 0;
+
     private tryCreateNewNode() {
         if (
             fps >= MIN_FPS &&
             !isAnimationPaused &&
             this._nodes.length < MAX_NODES
         ) {
-            this.createNode(NodeGenerators.RandomNode);
             this.createNode(NodeGenerators.RandomNode);
         }
     }

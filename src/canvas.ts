@@ -32,7 +32,7 @@ export const updaters = new Set<ICanvasElement>();
 
 /// FPS avergae.
 export let fps = 0;
-const FPS_AVG_SAMPLES = 60;
+const FPS_AVG_SAMPLES = 30;
 
 export let isAnimationPaused = true;
 let animationWatchdog = false;
@@ -54,7 +54,6 @@ function animate(forceRedraw?: boolean) {
         // Reset timeadvance to prevent large lags in the animation.
         timeAdvance = 1000 / fps;
     }
-    console.log(timeAdvance);
 
     let needsRedraw = forceRedraw;
     updaters.forEach((item: ICanvasElement) => {
