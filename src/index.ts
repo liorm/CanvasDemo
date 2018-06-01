@@ -1,4 +1,4 @@
-import {Node, StillNode, VectorNode} from "./node";
+import {GravityNode, Node, StillNode, VectorNode} from "./node";
 import {fps, ICanvasElement, isAnimationPaused, mouse, updaters} from "./canvas";
 import {Connection} from "./connection";
 import { Point } from 'paper';
@@ -23,8 +23,12 @@ function randomFromRange(min: number, max: number, fraction: number = 2) {
     return number;
 }
 
-class NodeGenerators {
-    static StillNode(): Node {
+interface INodeGenerator {
+    generate(): Node;
+}
+
+class StillNodeGenerator implements INodeGenerator {
+    generate(): Node {
         return new StillNode(
             0,
             0,
@@ -32,7 +36,10 @@ class NodeGenerators {
             'white'
         );
     }
-    static EdgeNode(): Node {
+}
+
+class EdgeNodeGenerator implements INodeGenerator {
+    generate(): Node {
         let node: Node;
         let x: number;
         let y: number;
@@ -60,7 +67,41 @@ class NodeGenerators {
 
         return node;
     }
-    static RandomNode(): Node {
+}
+
+class FountainNodeGenerator implements INodeGenerator {
+    constructor(private _origin: Node) {
+    }
+
+    private _hue: number = 0;
+
+    generate(): Node {
+        if (this._origin.isOffscreen) {
+            return null;
+        }
+
+        ++this._hue;
+        if (this._hue >= 360) {
+            this._hue = 0;
+        }
+
+        let node = new GravityNode(
+            this._origin.x, this._origin.y,
+            2,
+            `hsl(${this._hue}, 100%, 50%)`,
+            98,
+            new Point(
+                randomFromRange(-NODE_SPEED*5, NODE_SPEED*5),
+                randomFromRange(-NODE_SPEED*5, -NODE_SPEED)
+            )
+        );
+
+        return node;
+    }
+}
+
+class RandomNodeGenerator implements INodeGenerator {
+    generate(): Node {
         let node: Node;
         let x: number;
         let y: number;
@@ -80,36 +121,18 @@ class NodeGenerators {
 
         return node;
     }
-    static FountainNode(): Node {
-        let node: Node;
-        let x: number;
-        let y: number;
-
-        do {
-            node = new VectorNode(
-                innerWidth / 2,
-                innerHeight / 2,
-                2,
-                'white',
-                new Point(0, 0),
-                new Point(
-                    randomFromRange(-NODE_SPEED, NODE_SPEED),
-                    randomFromRange(-NODE_SPEED, NODE_SPEED)
-                )
-            );
-        } while (node.isOffscreen);
-
-        return node;
-    }
 }
 
 class Controller implements ICanvasElement {
     constructor() {
+        this._mouseNode = <StillNode>this.createNode(new StillNodeGenerator());
+        this._mouseNode.move(mouse.x, mouse.y);
+
+        this._nodeGenerator = new FountainNodeGenerator(this._mouseNode);
+
         for (let i = 0; i < INITIAL_NODES; ++i) {
             this.tryCreateNewNode();
         }
-
-        this._mouseNode = <StillNode>this.createNode(NodeGenerators.StillNode);
 
         // Periodically try to create nodes.
         setInterval(() => {
@@ -117,11 +140,16 @@ class Controller implements ICanvasElement {
         }, 50);
     }
 
-    private createNode(generator: () => Node): Node {
-        const node = generator();
+    private readonly _nodeGenerator: INodeGenerator;
+
+    private createNode(generator: INodeGenerator): Node {
+        const node = generator.generate();
+        if (!node) {
+            return null;
+        }
 
         // Initialize the connections to the current existing nodes.
-        node.setOwnConnections(this._nodes.map(peer => new Connection(node, peer, 2, 'white')));
+        node.setOwnConnections(this._nodes.map(peer => new Connection(node, peer, 3, node.color)));
 
         // Add to the list.
         this._nodes.push(node);
@@ -135,6 +163,7 @@ class Controller implements ICanvasElement {
         this._nodes.forEach(item => item.draw(ctx));
 
         ctx.globalAlpha = 1;
+        ctx.fillStyle = 'white';
         ctx.fillText('Nodes: ' + this._nodes.length,0,15);
         ctx.fillText('FPS: ' + fps.toFixed(2),0,45);
     }
@@ -166,7 +195,8 @@ class Controller implements ICanvasElement {
             !isAnimationPaused &&
             this._nodes.length < MAX_NODES
         ) {
-            this.createNode(NodeGenerators.RandomNode);
+            this.createNode(this._nodeGenerator);
+            //this.createNode(NodeGenerators.RandomNode);
         }
     }
 }
