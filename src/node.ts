@@ -8,21 +8,16 @@ const NODE_OPACITY_STEP = 0.5;
 
 export abstract class Node implements ICanvasElement {
     protected constructor(
-        x: number,
-        y: number,
+        protected _x: number,
+        protected _y: number,
         protected radius: number,
-        public color: string
+        protected color: string
     ) {
-        this._position = new Point(x, y);
         this.invalidateOffScreen();
     }
 
-    private readonly _position: Point;
-
-    public get position() { return this._position; }
-
-    public get x() { return this._position.x; }
-    public get y() { return this._position.y; }
+    public get x() { return this._x; }
+    public get y() { return this._y; }
 
     private _ownConnections: Connection[] = [];
 
@@ -34,8 +29,8 @@ export abstract class Node implements ICanvasElement {
         x: number,
         y: number
     ) {
-        this._position.x = x;
-        this._position.y = y;
+        this._x = x;
+        this._y = y;
         this.invalidateOffScreen();
     }
 
@@ -55,16 +50,16 @@ export abstract class Node implements ICanvasElement {
         this.invalidateOffScreen();
 
         // Decay when going off-screen.
-        this._isDecaying = this.shouldDecay;
+        this._isDecaying = this.isOffscreen;
 
         // Update own connections.
         this._ownConnections.forEach(conn => conn.update(secs));
     }
 
     private invalidateOffScreen() {
-        if (this.x > innerWidth || this.x < 0) {
+        if (this._x > innerWidth || this._x < 0) {
             this._isOffscreen = true;
-        } else if (this.y > innerHeight || this.y < 0) {
+        } else if (this._y > innerHeight || this._y < 0) {
             this._isOffscreen = true;
         } else
             this._isOffscreen = false;
@@ -72,7 +67,7 @@ export abstract class Node implements ICanvasElement {
 
     public draw(ctx: CanvasRenderingContext2D) {
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        ctx.arc(this._x, this._y, this.radius, 0, Math.PI * 2, false);
         ctx.globalAlpha = this._opacity;
         ctx.fillStyle = this.color;
         ctx.fill();
@@ -88,14 +83,6 @@ export abstract class Node implements ICanvasElement {
         return this._isOffscreen;
     }
     private _isOffscreen: boolean = false;
-
-    /**
-     * Returns true if the node should decay (or false if it should revive)
-     */
-    protected get shouldDecay() {
-        // Default implementation - decay when going offscreen.
-        return this.isOffscreen;
-    }
 
     public get isVisible() {
         return this._opacity > 0;
@@ -127,38 +114,9 @@ export class StillNode extends Node {
     private _moved: boolean = false;
 
     public move(x: number, y: number) {
-        this.position.x = x;
-        this.position.y = y;
+        this._x = x;
+        this._y = y;
         this._moved = true;
-    }
-}
-
-export class GravityNode extends Node {
-    constructor(
-        x: number, y: number,
-        radius: number,
-        color: string,
-        public gravity: number,
-        public velocity: Point
-    ) {
-        super(x, y, radius, color);
-    }
-
-    protected updatePosition(secs: number): boolean {
-        if (this.velocity.x === 0 && this.velocity.y === 0)
-            return false;
-
-        this.velocity.y += this.gravity * secs;
-
-        this.position.x += this.velocity.x * secs;
-        this.position.y += this.velocity.y * secs;
-
-        return true;
-    }
-
-    protected get shouldDecay(): boolean {
-        // Decay only if position is offscreen towards the bottom.
-        return (this.y > innerHeight);
     }
 }
 
@@ -188,8 +146,8 @@ export class VectorNode extends Node {
             this.velocity.y += this.acceleration.y * secs;
         }
 
-        this.position.x += this.velocity.x * secs;
-        this.position.y += this.velocity.y * secs;
+        this._x += this.velocity.x * secs;
+        this._y += this.velocity.y * secs;
         return true;
     }
 }
