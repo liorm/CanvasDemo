@@ -7,15 +7,10 @@ cache:
     - node_modules
 
 before_install:
-  - npm install -g typescript@3.1.6
+  - npm install -g webpack
 
 script:
-  - tsc --build
-  - mkdir dist
-  - cp -a index.html dist/
-  - cp -a style.css dist/
-  - mkdir -p dist/scripts
-  - cp -a scripts/*.js dist/scripts/
+  - webpack
 
 deploy:
   provider: pages
