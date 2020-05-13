@@ -1,6 +1,6 @@
 import {ICanvasElement} from "./canvas";
 import {Connection} from "./connection";
-import { Point } from 'paper';
+import Point = paper.Point;
 
 const NODE_DECAY_STEP = 1;
 const NODE_OPACITY_STEP = 0.5;
@@ -53,7 +53,12 @@ export abstract class Node implements ICanvasElement {
         this._isDecaying = this.isOffscreen;
 
         // Update own connections.
-        this._ownConnections.forEach(conn => conn.update(secs));
+        let needsUpdate = false;
+        this._ownConnections.forEach(conn => {
+            needsUpdate = needsUpdate || conn.update(secs);
+        });
+
+        return needsUpdate;
     }
 
     private invalidateOffScreen() {

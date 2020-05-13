@@ -1,7 +1,7 @@
 import {Node, StillNode, VectorNode} from "./node";
 import {fps, ICanvasElement, isAnimationPaused, mouse, updaters} from "./canvas";
 import {Connection} from "./connection";
-import { Point } from 'paper';
+import { Point } from "paper";
 
 const INITIAL_NODES = 300;
 const MIN_FPS = 15;
