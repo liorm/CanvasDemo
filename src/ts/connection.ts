@@ -60,13 +60,22 @@ export class Connection implements ICanvasElement {
             this._opacity = 0;
         } else {
             const distance = Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
-            this._opacity = 1 - distance / MAX_DISTANCE;
-            if (this._opacity > 1) this._opacity = 1;
-            if (this._opacity <= 0.05) this._opacity = 0;
+            if (distance >= MAX_DISTANCE) {
+                this._opacity = 0;
+            } else {
+                this._opacity = 1 - distance / MAX_DISTANCE;
+                if (this._opacity > 1) {
+                    this._opacity = 1;
+                }
 
-            // Make sure opacity corrolates the nodes opacity - used for smoothing the connection in when node is added.
-            if (this._opacity > this._ownerNode.opacity) this._opacity = this._ownerNode.opacity;
-            if (this._opacity > this._peerNode.opacity) this._opacity = this._peerNode.opacity;
+                // Make sure opacity correlates the nodes opacity - used for smoothing the connection in when node is added.
+                if (this._opacity > this._ownerNode.opacity) {
+                    this._opacity = this._ownerNode.opacity;
+                }
+                if (this._opacity > this._peerNode.opacity) {
+                    this._opacity = this._peerNode.opacity;
+                }
+            }
         }
 
         return this.isVisible || wasVisible != this.isVisible;

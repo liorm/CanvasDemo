@@ -55,7 +55,7 @@ export abstract class Node implements ICanvasElement {
         // Update own connections.
         let needsUpdate = false;
         this._ownConnections.forEach(conn => {
-            needsUpdate = needsUpdate || conn.update(secs);
+            needsUpdate = conn.update(secs) || needsUpdate;
         });
 
         return needsUpdate;
