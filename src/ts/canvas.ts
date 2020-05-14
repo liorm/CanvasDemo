@@ -11,11 +11,22 @@ export const mouse = {
     x: -1,
     y: -1
 };
+export let mouseDown = false;
 
 // Event Listeners
 addEventListener('mousemove', event => {
     mouse.x = event.clientX;
     mouse.y = event.clientY;
+});
+
+// Event Listeners
+addEventListener('mousedown', event => {
+    mouseDown = true;
+});
+
+// Event Listeners
+addEventListener('mouseup', event => {
+    mouseDown = false;
 });
 
 addEventListener('resize', () => {

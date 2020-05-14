@@ -2,7 +2,7 @@ import {ICanvasElement} from "./canvas";
 import {Connection} from "./connection";
 import Point = paper.Point;
 
-const NODE_DECAY_STEP = 1;
+const NODE_DECAY_DURATION_SECONDS = 1;
 const NODE_OPACITY_STEP = 0.5;
 
 
@@ -11,7 +11,7 @@ export abstract class Node implements ICanvasElement {
         protected _x: number,
         protected _y: number,
         protected radius: number,
-        protected color: string
+        public color: string
     ) {
         this.invalidateOffScreen();
     }
@@ -19,10 +19,20 @@ export abstract class Node implements ICanvasElement {
     public get x() { return this._x; }
     public get y() { return this._y; }
 
+    private _explicitDecay = false;
+    private _decayDuration = NODE_DECAY_DURATION_SECONDS;
     private _ownConnections: Connection[] = [];
 
     public setOwnConnections(list: Connection[]) {
         this._ownConnections = list;
+    }
+
+    public setDecaying(duration?: number) {
+        this._explicitDecay = true;
+        this._opacity = 1;
+        if (duration !== undefined) {
+            this._decayDuration = duration;
+        }
     }
 
     public reinitialize(
@@ -37,7 +47,7 @@ export abstract class Node implements ICanvasElement {
     public update(secs: number): boolean {
         // Update opacity gradually.
         if (this._isDecaying) {
-            this._opacity -= NODE_DECAY_STEP * secs;
+            this._opacity -= secs / this._decayDuration;
             if (this._opacity < 0) this._opacity = 0;
         } else {
             this._opacity += NODE_OPACITY_STEP * secs;
@@ -50,7 +60,7 @@ export abstract class Node implements ICanvasElement {
         this.invalidateOffScreen();
 
         // Decay when going off-screen.
-        this._isDecaying = this.isOffscreen;
+        this._isDecaying = this._explicitDecay || this.isOffscreen;
 
         // Update own connections.
         let needsUpdate = false;

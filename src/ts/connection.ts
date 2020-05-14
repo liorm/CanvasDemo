@@ -7,29 +7,25 @@ export class Connection implements ICanvasElement {
     constructor(
         ownerNode: Node,
         peerNode: Node,
-        width: number,
-        color: string
+        width: number
     ) {
-        this.reinitialize(ownerNode, peerNode, width, color);
+        this.reinitialize(ownerNode, peerNode, width);
     }
 
     reinitialize(
         owner: Node,
         peerNode: Node,
-        width: number,
-        color: string
+        width: number
     ) {
         this._ownerNode = owner;
         this._peerNode = peerNode;
         this.width = width;
-        this.color = color;
         this._opacity = 0;
     }
 
     private _ownerNode: Node;
     private _peerNode: Node;
     public width: number;
-    public color: string;
     private _opacity: number;
 
     public get peer() { return this._peerNode; }
@@ -38,9 +34,22 @@ export class Connection implements ICanvasElement {
         if (!this.isVisible)
             return;
 
+        let stroke;
+        if (this._ownerNode.color === this._peerNode.color) {
+            stroke = this._ownerNode.color;
+        } else {
+            const gradient = ctx.createLinearGradient(
+                this._ownerNode.x, this._ownerNode.y,
+                this._peerNode.x, this._peerNode.y
+            );
+            gradient.addColorStop(0, this._ownerNode.color);
+            gradient.addColorStop(1, this._peerNode.color);
+            stroke = gradient;
+        }
+
         ctx.beginPath();
         ctx.globalAlpha = this._opacity;
-        ctx.strokeStyle = this.color;
+        ctx.strokeStyle = stroke;
         ctx.lineWidth = this.width;
         ctx.moveTo(this._ownerNode.x, this._ownerNode.y);
         ctx.lineTo(this._peerNode.x, this._peerNode.y);

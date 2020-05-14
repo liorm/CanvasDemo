@@ -1,5 +1,5 @@
 import {Node, StillNode, VectorNode} from "./node";
-import {fps, ICanvasElement, isAnimationPaused, mouse, updaters} from "./canvas";
+import {fps, ICanvasElement, isAnimationPaused, mouse, mouseDown, updaters} from "./canvas";
 import {Connection} from "./connection";
 import { Point } from "paper";
 
@@ -21,6 +21,14 @@ function randomFromRange(min: number, max: number, fraction: number = 2) {
     number = number / div;
 
     return number;
+}
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[randomIntFromRange(0, 15)];
+    }
+    return color;
 }
 
 class NodeGenerators {
@@ -82,22 +90,46 @@ class NodeGenerators {
     }
     static FountainNode(): Node {
         let node: Node;
-        let x: number;
-        let y: number;
+        // let x: number = innerWidth / 2;
+        // let y: number = innerHeight / 2;
+        let x: number = mouse.x;
+        let y: number = mouse.y;
 
-        do {
-            node = new VectorNode(
-                innerWidth / 2,
-                innerHeight / 2,
-                2,
-                'white',
-                new Point(0, 0),
-                new Point(
-                    randomFromRange(-NODE_SPEED, NODE_SPEED),
-                    randomFromRange(-NODE_SPEED, NODE_SPEED)
-                )
-            );
-        } while (node.isOffscreen);
+        node = new VectorNode(
+            x,
+            y,
+            2,
+            'white',
+            new Point(
+                randomFromRange(-NODE_SPEED, NODE_SPEED)* 2,
+                randomFromRange(-NODE_SPEED, NODE_SPEED) * 2
+            ),
+            new Point(
+                randomFromRange(-NODE_SPEED, NODE_SPEED) * 2,
+                randomFromRange(-NODE_SPEED, NODE_SPEED) * 2
+            )
+        );
+
+        return node;
+    }
+    static GravityNode(): Node {
+        let node: Node;
+        // let x: number = innerWidth / 2;
+        // let y: number = innerHeight / 2;
+        let x: number = mouse.x;
+        let y: number = mouse.y;
+
+        node = new VectorNode(
+            x,
+            y,
+            2,
+            'white',
+            new Point(0, NODE_SPEED),
+            new Point(
+                randomFromRange(-10, 10),
+                randomFromRange(NODE_SPEED / 2, NODE_SPEED)
+            )
+        );
 
         return node;
     }
@@ -121,7 +153,7 @@ class Controller implements ICanvasElement {
         const node = generator();
 
         // Initialize the connections to the current existing nodes.
-        node.setOwnConnections(this._nodes.map(peer => new Connection(node, peer, 2, 'white')));
+        node.setOwnConnections(this._nodes.map(peer => new Connection(node, peer, 2)));
 
         // Add to the list.
         this._nodes.push(node);
@@ -135,6 +167,8 @@ class Controller implements ICanvasElement {
         this._nodes.forEach(item => item.draw(ctx));
 
         ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'white';
+        ctx.fillStyle = 'white';
         ctx.fillText('Nodes: ' + this._nodes.length,0,15);
         ctx.fillText('FPS: ' + fps.toFixed(2),0,45);
     }
@@ -161,12 +195,19 @@ class Controller implements ICanvasElement {
     private _nodes: Node[] = [];
 
     private tryCreateNewNode() {
-        if (
-            fps >= MIN_FPS &&
-            !isAnimationPaused &&
-            this._nodes.length < MAX_NODES
-        ) {
-            this.createNode(NodeGenerators.RandomNode);
+        if (mouseDown) {
+            const node = this.createNode(NodeGenerators.FountainNode);
+            node.color = getRandomColor();
+            node.setDecaying(randomFromRange(1, 3));
+        } else {
+            // Create "background noise"
+            if (
+                fps >= MIN_FPS &&
+                !isAnimationPaused &&
+                this._nodes.length < MAX_NODES
+            ) {
+                this.createNode(NodeGenerators.RandomNode);
+            }
         }
     }
 }
